@@ -57,56 +57,28 @@ class AnimalsController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/edit', name: 'app_animals_edit', methods: ['PUT'])]
+    #[Route('/{id}/edit', name: 'app_animals_edit', methods: ['PUT', 'PATCH'])]
     public function edit(Request $request, Animals $animal, AnimalsRepository $animalsRepository): Response
-{
-    $animalData = json_decode($request->getContent(), true);
+    {
+        $data = json_decode($request->getContent(), true);
+        $form = $this->createForm(AnimalsType::class, $animal);
+        $form->submit($data);
 
-    if (isset($animalData['animal'])) {
-        $animalData = $animalData['animal'];
-
-        // On met à jour les attributs de l'objet $animal avec les nouvelles données
-        if (isset($animalData['name'])) {
-            $animal->setName($animalData['name']);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $animalsRepository->save($animal, true);
+            //return $this->redirectToRoute('app_animals_index', [], Response::HTTP_SEE_OTHER);
         }
-
-        if (isset($animalData['size'])) {
-            $animal->setSize($animalData['size']);
-        }
-
-        if (isset($animalData['lifetime'])) {
-            $animal->setLifetime($animalData['lifetime']);
-        }
-
-        if (isset($animalData['phone'])) {
-            $animal->setPhone($animalData['phone']);
-        }
-
-        if (isset($animalData['martialArt'])) {
-            $animal->setMartialArt($animalData['martialArt']);
-        }
-
-        if (isset($animalData['country'])) {
-            $countryData = $animalData['country'];
-            if (isset($countryData['id'])) {
-                $country = $animalsRepository->findCountryById($countryData['id']);
-                if ($country) {
-                    $animal->setCountry($country);
-                }
-            }
-        }
-
-        $animalsRepository->save($animal, true);
 
         return $this->json([
             'animal' => $animal,
-        ]);
-    }
+            'message' => "L'animal a été modifié"
+        ], Response::HTTP_OK);
 
-    return $this->json([
-        'error' => 'Invalid JSON format',
-    ], Response::HTTP_BAD_REQUEST);
-}
+        // return $this->renderForm('animals/edit.html.twig', [
+        //     'animal' => $animal,
+        //     'form' => $form,
+        // ]);
+    }
 
    #[Route('/{id}', name: 'app_animals_delete', methods: ['DELETE'])]
    public function delete(Animals $animal, AnimalsRepository $animalsRepository): Response
@@ -125,5 +97,7 @@ class AnimalsController extends AbstractController
             'animals' => $animals,
         ]);
     }
+
+   
 
 }
